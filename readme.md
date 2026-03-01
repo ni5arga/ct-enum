@@ -1,7 +1,13 @@
-# ct-enum: Certificate Transparency Subdomain Enumerator
+# ct-enum
 
-Passive subdomain discovery via CT logs (crt.sh + optional Censys).
+![screenshot](screenshot.png)
 
+[![Python](https://img.shields.io/badge/python-3.11+-blue?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
+[![aiohttp](https://img.shields.io/badge/aiohttp-async-blue?style=flat-square)](https://docs.aiohttp.org/)
+[![passive recon](https://img.shields.io/badge/recon-passive-green?style=flat-square)]()
+[![CT logs](https://img.shields.io/badge/source-crt.sh%20%2B%20Censys-orange?style=flat-square)]()
+
+Passive subdomain enumeration via Certificate Transparency logs (crt.sh + optional Censys).
 
 ## Project Structure
 
@@ -13,57 +19,37 @@ ct-enum/
 └── utils.py         # Domain validation, backoff, formatting
 ```
 
-
 ## Requirements
 
 - Python 3.11+
 - [aiohttp](https://docs.aiohttp.org/)
 
-Install dependencies:
-
 ```bash
 pip install aiohttp
 ```
 
-
 ## Usage
-
-### Basic — print sorted subdomains to terminal
 
 ```bash
 python main.py example.com
 ```
 
-**Output:**
+Output:
+
 ```
-
-  ██████╗████████╗      ███████╗███╗   ██╗██╗   ██╗███╗   ███╗
- ██╔════╝╚══██╔══╝      ██╔════╝████╗  ██║██║   ██║████╗ ████║
- ██║        ██║   █████╗█████╗  ██╔██╗ ██║██║   ██║██╔████╔██║
- ██║        ██║   ╚════╝██╔══╝  ██║╚██╗██║██║   ██║██║╚██╔╝██║
- ╚██████╗   ██║         ███████╗██║ ╚████║╚██████╔╝██║ ╚═╝ ██║
-  ╚═════╝   ╚═╝         ╚══════╝╚═╝  ╚═══╝ ╚═════╝ ╚═╝     ╚═╝
-  Certificate Transparency  //  Passive Subdomain Enumeration v1.0
-
 [*] Target   : example.com
 [*] Providers: CrtShProvider, CensysProvider
 [*] Timeout  : 30.0s
-  ────────────────────────────────────────────────────
 [*] Querying Certificate Transparency logs...
-[+] Done — 5 unique subdomains found
-  ────────────────────────────────────────────────────
+[+] Done - 5 unique subdomains found
 
-  ════════════════════════════════════════════════════
   TARGET  example.com   FOUND  5
-  ════════════════════════════════════════════════════
   ▸  dev.example.com
   ▸  m.example.com
   ▸  products.example.com
   ▸  support.example.com
   ▸  www.example.com
-  ════════════════════════════════════════════════════
-  ```
-
+```
 
 ### JSON output
 
@@ -71,7 +57,6 @@ python main.py example.com
 python main.py example.com --json
 ```
 
-**Output:**
 ```json
 {
   "domain": "example.com",
@@ -86,125 +71,77 @@ python main.py example.com --json
 }
 ```
 
-
-### Save results to a file
+### Save to file
 
 ```bash
-# Plain text
 python main.py example.com --output results.txt
-
-# JSON to file
 python main.py example.com --json --output results.json
 ```
 
-
-### Set a custom timeout
-
-Default is 30 seconds. For large domains or slow connections:
+### Other flags
 
 ```bash
-python main.py example.com --timeout 60
+python main.py example.com --timeout 60   # custom timeout (default: 30s)
+python main.py example.com -v             # verbose/debug logging
 ```
 
-
-### Verbose / debug logging
-
-```bash
-python main.py example.com --verbose
-# or
-python main.py example.com -v
-```
-
-Shows per-provider status, retry events, rate-limit warnings, and entry counts.
-
-
-## All Flags
+## Flags
 
 | Flag | Type | Default | Description |
 |------|------|---------|-------------|
-| `domain` | positional | — | Target domain, e.g. `example.com` |
-| `--json` | flag | off | Output as JSON instead of table |
-| `--output FILE` | string | — | Write output to file |
+| `domain` | positional | | Target domain, e.g. `example.com` |
+| `--json` | flag | off | Output as JSON |
+| `--output FILE` | string | | Write output to file |
 | `--timeout SECS` | float | `30.0` | HTTP request timeout in seconds |
 | `--verbose` / `-v` | flag | off | Enable debug logging |
 
----
+## Censys Integration
 
-## Optional: Censys Integration
-
-Censys provides additional certificate data but requires a free API account.
-
-**Step 1**: Sign up at [censys.io](https://search.censys.io/) and get your API ID and Secret.
-
-**Step 2**: Set environment variables:
+Censys is optional and requires a free API account from [censys.io](https://search.censys.io/).
 
 ```bash
 export CENSYS_API_ID="your-api-id"
 export CENSYS_API_SECRET="your-api-secret"
 ```
 
-**Step 3**: Run normally. Censys is detected and used automatically:
-
-```bash
-python main.py example.com --verbose
-```
-
-If credentials are not set, Censys is silently skipped and only crt.sh is queried. No configuration change needed.
-
+When credentials are present, Censys is queried automatically alongside crt.sh. If not set, it is silently skipped.
 
 ## How It Works
 
 1. Queries `crt.sh` for all certificates matching `%.example.com`
-2. Optionally queries Censys (if credentials present)
+2. Optionally queries Censys (if credentials are set)
 3. Parses `name_value` and `common_name` fields from each certificate entry
-4. Splits multi-line entries, lowercases everything, strips wildcard prefixes (`*.`)
-5. Deduplicates using a set, filters to valid subdomains only
-6. Returns a sorted list
+4. Normalizes names: lowercased, wildcard prefixes (`*.`) stripped
+5. Deduplicates, filters to valid subdomains of the target, returns sorted
 
-Network errors, rate limits, and invalid JSON are all handled with exponential backoff (up to 4 retries, capped at 60 seconds).
-
+Failed requests and rate limits are retried with exponential backoff (up to 4 attempts, capped at 60s).
 
 ## Examples
 
 ```bash
-# Quick recon on a target
 python main.py tesla.com
-
-# Save JSON report
 python main.py github.com --json --output github_subs.json
-
-# Aggressive timeout for large domains
-python main.py google.com --timeout 120 --verbose
-
-# Pipe into other tools
+python main.py google.com --timeout 120 -v
 python main.py example.com --json | jq '.subdomains[]'
 ```
 
+## Extending
 
-## Adding a New CT Provider
-
-`ct_sources.py` exposes an abstract base class `CTProvider`. To add a new source:
+Implement the `CTProvider` abstract base class in `ct_sources.py` and register it in `get_providers()`:
 
 ```python
 from ct_sources import CTProvider
 
 class MyProvider(CTProvider):
     async def fetch(self, domain: str, session: aiohttp.ClientSession) -> list[dict]:
-        # fetch and return raw list of dicts
         ...
-```
 
-Then register it in `get_providers()`:
-
-```python
 def get_providers() -> list[CTProvider]:
     return [CrtShProvider(), CensysProvider(), MyProvider()]
 ```
 
-
 ## Notes
 
-- crt.sh can be slow or temporarily rate-limit heavy queries - the tool retries automatically
-- Results reflect **historical certificates**, not necessarily live subdomains
-- Wildcard certs (`*.example.com`) are stripped and excluded since they don't represent a specific subdomain
-- No DNS resolution is performed - this is purely passive
+- Results reflect historical certificate data, not live/active subdomains
+- Wildcard certs (`*.example.com`) are excluded; they don't map to a specific subdomain
+- No DNS resolution is performed; this tool is entirely passive
