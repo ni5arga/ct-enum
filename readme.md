@@ -2,7 +2,6 @@
 
 Passive subdomain discovery via CT logs (crt.sh + optional Censys).
 
----
 
 ## Project Structure
 
@@ -14,7 +13,6 @@ ct-enum/
 └── utils.py         # Domain validation, backoff, formatting
 ```
 
----
 
 ## Requirements
 
@@ -27,7 +25,6 @@ Install dependencies:
 pip install aiohttp
 ```
 
----
 
 ## Usage
 
@@ -39,16 +36,34 @@ python main.py example.com
 
 **Output:**
 ```
-Subdomains of example.com (5 found)
-──────────────────────────────────────────────────
-  api.example.com
-  cdn.example.com
-  mail.example.com
-  staging.example.com
-  www.example.com
-```
 
----
+  ██████╗████████╗      ███████╗███╗   ██╗██╗   ██╗███╗   ███╗
+ ██╔════╝╚══██╔══╝      ██╔════╝████╗  ██║██║   ██║████╗ ████║
+ ██║        ██║   █████╗█████╗  ██╔██╗ ██║██║   ██║██╔████╔██║
+ ██║        ██║   ╚════╝██╔══╝  ██║╚██╗██║██║   ██║██║╚██╔╝██║
+ ╚██████╗   ██║         ███████╗██║ ╚████║╚██████╔╝██║ ╚═╝ ██║
+  ╚═════╝   ╚═╝         ╚══════╝╚═╝  ╚═══╝ ╚═════╝ ╚═╝     ╚═╝
+  Certificate Transparency  //  Passive Subdomain Enumeration v1.0
+
+[*] Target   : example.com
+[*] Providers: CrtShProvider, CensysProvider
+[*] Timeout  : 30.0s
+  ────────────────────────────────────────────────────
+[*] Querying Certificate Transparency logs...
+[+] Done — 5 unique subdomains found
+  ────────────────────────────────────────────────────
+
+  ════════════════════════════════════════════════════
+  TARGET  example.com   FOUND  5
+  ════════════════════════════════════════════════════
+  ▸  dev.example.com
+  ▸  m.example.com
+  ▸  products.example.com
+  ▸  support.example.com
+  ▸  www.example.com
+  ════════════════════════════════════════════════════
+  ```
+
 
 ### JSON output
 
@@ -71,7 +86,6 @@ python main.py example.com --json
 }
 ```
 
----
 
 ### Save results to a file
 
@@ -83,7 +97,6 @@ python main.py example.com --output results.txt
 python main.py example.com --json --output results.json
 ```
 
----
 
 ### Set a custom timeout
 
@@ -93,7 +106,6 @@ Default is 30 seconds. For large domains or slow connections:
 python main.py example.com --timeout 60
 ```
 
----
 
 ### Verbose / debug logging
 
@@ -105,7 +117,6 @@ python main.py example.com -v
 
 Shows per-provider status, retry events, rate-limit warnings, and entry counts.
 
----
 
 ## All Flags
 
@@ -140,7 +151,6 @@ python main.py example.com --verbose
 
 If credentials are not set, Censys is silently skipped and only crt.sh is queried. No configuration change needed.
 
----
 
 ## How It Works
 
@@ -153,7 +163,6 @@ If credentials are not set, Censys is silently skipped and only crt.sh is querie
 
 Network errors, rate limits, and invalid JSON are all handled with exponential backoff (up to 4 retries, capped at 60 seconds).
 
----
 
 ## Examples
 
@@ -171,7 +180,6 @@ python main.py google.com --timeout 120 --verbose
 python main.py example.com --json | jq '.subdomains[]'
 ```
 
----
 
 ## Adding a New CT Provider
 
@@ -193,11 +201,10 @@ def get_providers() -> list[CTProvider]:
     return [CrtShProvider(), CensysProvider(), MyProvider()]
 ```
 
----
 
 ## Notes
 
-- crt.sh can be slow or temporarily rate-limit heavy queries — the tool retries automatically
+- crt.sh can be slow or temporarily rate-limit heavy queries - the tool retries automatically
 - Results reflect **historical certificates**, not necessarily live subdomains
 - Wildcard certs (`*.example.com`) are stripped and excluded since they don't represent a specific subdomain
-- No DNS resolution is performed — this is purely passive
+- No DNS resolution is performed - this is purely passive
