@@ -4,12 +4,13 @@ import argparse
 import asyncio
 import json
 import logging
+import re
 import sys
 
 import aiohttp
 
 from ct_sources import CTProvider, CrtShProvider, CensysProvider, get_providers
-from parser import extract_names_crtsh, extract_names_censys, filter_subdomains
+from extractor import extract_names_crtsh, extract_names_censys, filter_subdomains
 from utils import validate_domain, aligned_table
 
 logger = logging.getLogger(__name__)
@@ -201,8 +202,7 @@ async def run(args: argparse.Namespace) -> None:
             output = f"{header}\n{body}\n{separator}\n"
 
     if args.output:
-        import re as _re
-        clean = _re.sub(r"\033\[[0-9;]*m", "", output)
+        clean = re.sub(r"\033\[[0-9;]*m", "", output)
         try:
             with open(args.output, "w", encoding="utf-8") as fh:
                 fh.write(clean + "\n")

@@ -1,0 +1,19 @@
+[MAIN]
+py-version = 3.11
+
+[MESSAGES CONTROL]
+disable =
+    C0114,  # missing-module-docstring
+    C0115,  # missing-class-docstring
+    C0116,  # missing-function-docstring
+    R0903,  # too-few-public-methods
+    W0718,  # broad-exception-caught (intentional in retry logic)
+
+[FORMAT]
+max-line-length = 120
+
+[DESIGN]
+max-locals = 20
+
+[REPORTS]
+fail-under = 9.0

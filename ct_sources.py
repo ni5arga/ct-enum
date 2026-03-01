@@ -1,8 +1,11 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import logging
+import os
 from abc import ABC, abstractmethod
+
 import aiohttp
 
 from utils import exponential_backoff
@@ -38,7 +41,10 @@ class CrtShProvider(CTProvider):
 
                     if response.status != 200:
                         body_preview = (await response.text())[:200]
-                        logger.error("crt.sh unexpected status %d: %s", response.status, body_preview)
+                        logger.error(
+                            "crt.sh unexpected status %d: %s",
+                            response.status, body_preview
+                        )
                         wait = exponential_backoff(attempt)
                         await asyncio.sleep(wait)
                         continue
@@ -51,7 +57,6 @@ class CrtShProvider(CTProvider):
                         return []
 
                     try:
-                        import json
                         data = json.loads(raw_text)
                     except Exception as exc:
                         logger.error("crt.sh invalid JSON (%s) — preview: %s", exc, raw_text[:200])
@@ -66,11 +71,16 @@ class CrtShProvider(CTProvider):
 
             except asyncio.TimeoutError:
                 wait = exponential_backoff(attempt)
-                logger.warning("crt.sh timed out on attempt %d — retrying in %.1fs", attempt + 1, wait)
+                logger.warning(
+                    "crt.sh timed out on attempt %d, retrying in %.1fs", attempt + 1, wait
+                )
                 await asyncio.sleep(wait)
             except aiohttp.ClientError as exc:
                 wait = exponential_backoff(attempt)
-                logger.warning("crt.sh client error (%s) on attempt %d — retrying in %.1fs", exc, attempt + 1, wait)
+                logger.warning(
+                    "crt.sh client error (%s) on attempt %d, retrying in %.1fs",
+                    exc, attempt + 1, wait
+                )
                 await asyncio.sleep(wait)
 
         logger.error("crt.sh exhausted all %d retries for %s", self.MAX_RETRIES, domain)
@@ -82,7 +92,6 @@ class CensysProvider(CTProvider):
     MAX_RETRIES = 4
 
     def _credentials(self) -> tuple[str, str] | None:
-        import os
         api_id = os.getenv("CENSYS_API_ID")
         api_secret = os.getenv("CENSYS_API_SECRET")
         if api_id and api_secret:
