@@ -9,16 +9,6 @@
 
 Passive subdomain enumeration via Certificate Transparency logs (crt.sh + optional Censys).
 
-## Project Structure
-
-```
-ct-enum/
-├── main.py          # CLI entry point
-├── ct_sources.py    # CT provider implementations (crt.sh, Censys)
-├── parser.py        # Name extraction, normalization, filtering
-└── utils.py         # Domain validation, backoff, formatting
-```
-
 ## Requirements
 
 - Python 3.11+
